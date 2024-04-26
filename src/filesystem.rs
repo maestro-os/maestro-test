@@ -1,9 +1,7 @@
 //! TODO doc
 
-use std::ffi::OsString;
 use crate::util::TestResult;
 use crate::{test_assert, test_assert_eq};
-use std::{fs, mem};
 use std::fs::OpenOptions;
 use std::io;
 use std::io::Read;
@@ -11,8 +9,8 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
 use std::os::fd::AsRawFd;
-use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
+use std::{fs, mem};
 
 pub fn basic0() -> TestResult {
     const PATH: &str = "test";

@@ -53,6 +53,7 @@ const TESTS: &[TestSuite] = &[
     // TODO time ((non)-monotonic clock, sleep and timer_*)
     // TODO termcaps
     // TODO SSE/MMX/AVX states consistency
+    // TODO procfs content
     TestSuite {
         name: "command",
         desc: "Basic commands testing",
@@ -60,14 +61,17 @@ const TESTS: &[TestSuite] = &[
             Test {
                 name: "ls -l /",
                 desc: "ls -l /",
-                start: || exec(Command::new("ls").args(&["-l", "/"])),
+                start: || exec(Command::new("ls").args(["-l", "/"])),
             },
             Test {
                 name: "ls -lR /",
                 desc: "ls -lR /",
-                start: || exec(Command::new("ls").args(&["-lR", "/"])),
+                start: || exec(Command::new("ls").args(["-lR", "/"])),
             },
-            // TODO `uname -a` with output check
+            // TODO `cat`
+            // TODO `cat -e`
+            // TODO `cp`
+            // TODO `rm`
         ],
     },
     // TODO scripts (Shell/Perl)
@@ -78,7 +82,7 @@ const TESTS: &[TestSuite] = &[
 fn main() {
     // Start marker
     println!();
-    println!("---start---");
+    println!("[START]");
     for suite in TESTS {
         println!("[SUITE] {}", suite.name);
         println!("[DESC] {}", suite.desc);
@@ -93,6 +97,5 @@ fn main() {
         }
     }
     // End marker
-    println!();
-    println!("---end---");
+    println!("[END]");
 }
