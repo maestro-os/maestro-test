@@ -1,14 +1,17 @@
 //! TODO doc
 
+use std::ffi::OsString;
 use crate::util::TestResult;
 use crate::{test_assert, test_assert_eq};
-use std::fs;
+use std::{fs, mem};
 use std::fs::OpenOptions;
 use std::io;
 use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
+use std::os::fd::AsRawFd;
+use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
 pub fn basic0() -> TestResult {
@@ -47,7 +50,18 @@ pub fn basic0() -> TestResult {
     let len = file.write(b"abcdefghij")?;
     test_assert_eq!(len, 10);
 
-    // TODO chmod
+    // chmod
+    for mode in 0..=0o7777 {
+        unsafe {
+            libc::fchmod(file.as_raw_fd(), mode);
+            test_assert_eq!(io::Error::last_os_error().raw_os_error().unwrap_or(0), 0);
+            let mut stat: libc::stat = mem::zeroed();
+            libc::fstat(file.as_raw_fd(), &mut stat);
+            test_assert_eq!(io::Error::last_os_error().raw_os_error().unwrap_or(0), 0);
+            test_assert_eq!(stat.st_mode & 0o7777, mode);
+        }
+    }
+
     // TODO change access/modification times
 
     // Test removing the file
