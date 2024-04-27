@@ -2,7 +2,6 @@
 
 use crate::util::{TestError, TestResult};
 use crate::{test_assert, test_assert_eq, util};
-use std::ffi::OsString;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io;
@@ -12,7 +11,6 @@ use std::io::SeekFrom;
 use std::io::Write;
 use std::os::fd::AsRawFd;
 use std::path::Path;
-use std::str::FromStr;
 
 pub fn basic() -> TestResult {
     const PATH: &str = "test";
@@ -52,13 +50,9 @@ pub fn basic() -> TestResult {
 
     // chmod
     for mode in 0..=0o7777 {
-        unsafe {
-            libc::fchmod(file.as_raw_fd(), mode);
-            test_assert_eq!(io::Error::last_os_error().raw_os_error().unwrap_or(0), 0);
-            let stat = util::fstat(file.as_raw_fd())?;
-            test_assert_eq!(io::Error::last_os_error().raw_os_error().unwrap_or(0), 0);
-            test_assert_eq!(stat.st_mode & 0o7777, mode);
-        }
+        util::fchmod(file.as_raw_fd(), mode)?;
+        let stat = util::fstat(file.as_raw_fd())?;
+        test_assert_eq!(stat.st_mode & 0o7777, mode);
     }
 
     // TODO change access/modification times
@@ -89,16 +83,39 @@ pub fn directories() -> TestResult {
 
     // Create directories
     fs::create_dir_all("/abc/def/ghi")?;
-    let stat = util::stat(OsString::from_str("/").unwrap().as_os_str())?;
+    let stat = util::stat("/")?;
     test_assert_eq!(stat.st_nlink, 3);
-    let stat = util::stat(OsString::from_str("/abc").unwrap().as_os_str())?;
+    let stat = util::stat("/abc")?;
     test_assert_eq!(stat.st_nlink, 3);
-    let stat = util::stat(OsString::from_str("/def").unwrap().as_os_str())?;
+    let stat = util::stat("/def")?;
     test_assert_eq!(stat.st_nlink, 3);
-    let stat = util::stat(OsString::from_str("/ghi").unwrap().as_os_str())?;
+    let stat = util::stat("/ghi")?;
     test_assert_eq!(stat.st_nlink, 2);
+    let stat = util::stat("/abc/def/ghi")?;
+    test_assert_eq!(stat.st_mode & 0o7777, 0o755);
 
-    // TODO permissions
+    // Permissions check
+    // No permission
+    util::chmod("/abc", 0o000)?;
+    util::stat("/abc")?;
+    let res = util::stat("/abc/def");
+    test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
+    let res = fs::read_dir("/abc");
+    test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
+    // Entries list and write without search permissions
+    for mode in [0o444, 0o666] {
+        util::chmod("/abc", mode)?;
+        let res = util::stat("/abc/def");
+        test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
+        fs::read_dir("/abc")?;
+        let res = fs::create_dir("/abc/no_perm");
+        test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
+    }
+    // Search permission
+    util::chmod("/abc", 0o555)?;
+    fs::read_dir("/abc")?;
+    let res = fs::create_dir("/abc/no_perm");
+    test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
 
     // Entries iteration
     for i in 0..1000 {
@@ -140,13 +157,13 @@ pub fn hardlinks() -> TestResult {
 
     // Link to file
     fs::hard_link("/test", "/good_link")?;
-    let inode0 = util::stat(OsString::from_str("/test").unwrap().as_os_str())?.st_ino;
-    let inode1 = util::stat(OsString::from_str("/good_link").unwrap().as_os_str())?.st_ino;
+    let inode0 = util::stat("/test")?.st_ino;
+    let inode1 = util::stat("/good_link")?.st_ino;
     test_assert_eq!(inode0, inode1);
     // Remove and check
     fs::remove_file("/good_link")?;
-    util::stat(OsString::from_str("/test").unwrap().as_os_str())?;
-    let res = util::stat(OsString::from_str("/good_link").unwrap().as_os_str());
+    util::stat("/test")?;
+    let res = util::stat("/good_link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
 
     // Link to file that don't exist (invalid)

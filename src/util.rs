@@ -1,10 +1,12 @@
 //! Utility features.
 
-use std::ffi::{c_int, OsStr};
+use libc::mode_t;
+use std::error::Error;
+use std::ffi::c_int;
 use std::os::unix::ffi::OsStrExt;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::{io, mem};
-use std::error::Error;
 
 pub struct TestError(pub String);
 
@@ -46,10 +48,29 @@ macro_rules! test_assert_eq {
     }};
 }
 
-pub fn stat(path: &OsStr) -> io::Result<libc::stat> {
+pub fn chmod<P: AsRef<Path>>(path: P, mode: mode_t) -> io::Result<()> {
+    let path = path.as_ref().as_os_str().as_bytes().as_ptr() as _;
+    let res = unsafe { libc::chmod(path, mode) };
+    if res >= 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub fn fchmod(fd: c_int, mode: mode_t) -> io::Result<()> {
+    let res = unsafe { libc::fchmod(fd, mode) };
+    if res >= 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+pub fn stat<P: AsRef<Path>>(path: P) -> io::Result<libc::stat> {
     unsafe {
         let mut stat: libc::stat = mem::zeroed();
-        let path = path.as_bytes().as_ptr() as _;
+        let path = path.as_ref().as_os_str().as_bytes().as_ptr() as _;
         let res = libc::stat(path, &mut stat);
         if res >= 0 {
             Ok(stat)
