@@ -36,7 +36,11 @@ const TESTS: &[TestSuite] = &[
                 start: filesystem::basic0,
             },
             // TODO umask
-            // TODO hard links
+            Test {
+                name: "hardlinks",
+                desc: "Test hardlinks creation",
+                start: filesystem::hardlinks,
+            },
             // TODO directory (with permissions)
             // TODO symbolic links
             // TODO mount/umount (procfs and tmpfs. check /proc/mounts too)
