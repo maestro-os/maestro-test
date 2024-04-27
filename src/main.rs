@@ -4,6 +4,7 @@ use crate::util::{exec, TestResult};
 use std::process::Command;
 
 mod filesystem;
+mod procfs;
 mod util;
 
 /*
@@ -53,7 +54,33 @@ const TESTS: &[TestSuite] = &[
     // TODO time ((non)-monotonic clock, sleep and timer_*)
     // TODO termcaps
     // TODO SSE/MMX/AVX states consistency
-    // TODO procfs content
+    TestSuite {
+        name: "procfs",
+        desc: "",
+        tests: &[
+            Test {
+                name: "/proc/self/cwd",
+                desc: "/proc/self/cwd",
+                start: procfs::cwd,
+            },
+            Test {
+                name: "/proc/self/exe",
+                desc: "/proc/self/exe",
+                start: procfs::exe,
+            },
+            Test {
+                name: "/proc/self/cmdline",
+                desc: "/proc/self/cmdline",
+                start: procfs::cmdline,
+            },
+            Test {
+                name: "/proc/self/environ",
+                desc: "/proc/self/environ",
+                start: procfs::environ,
+            },
+            // TODO /proc/self/stat
+        ],
+    },
     TestSuite {
         name: "command",
         desc: "Basic commands testing",
