@@ -5,11 +5,11 @@ use std::os::unix::ffi::OsStrExt;
 use std::process::{Command, Stdio};
 use std::{io, mem};
 
-pub struct TestError;
+pub struct TestError(pub String);
 
 impl From<io::Error> for TestError {
-    fn from(_: io::Error) -> Self {
-        TestError
+    fn from(err: io::Error) -> Self {
+        TestError(err.to_string())
     }
 }
 
@@ -20,8 +20,12 @@ pub type TestResult = Result<(), TestError>;
 #[macro_export]
 macro_rules! test_assert {
     ($predicate:expr) => {{
-        if !($predicate) {
-            return Err($crate::util::TestError);
+        let pred = ($predicate);
+        if !pred {
+            return Err($crate::util::TestError(format!(
+                "Assertion failed: {}",
+                stringify!($predicate)
+            )));
         }
     }};
 }
@@ -30,8 +34,13 @@ macro_rules! test_assert {
 #[macro_export]
 macro_rules! test_assert_eq {
     ($a:expr, $b:expr) => {{
-        if ($a) != ($b) {
-            return Err($crate::util::TestError);
+        let a = ($a);
+        let b = ($b);
+        if a != b {
+            return Err($crate::util::TestError(format!(
+                "Assertion failed\n\tleft: `{:?}`\n\tright: `{:?}`",
+                a, b
+            )));
         }
     }};
 }
@@ -69,6 +78,10 @@ pub fn exec(cmd: &mut Command) -> TestResult {
     if status.success() {
         Ok(())
     } else {
-        Err(TestError)
+        Err(TestError(format!(
+            "Command failed (status: {}): {:?}",
+            status.code().unwrap(),
+            cmd
+        )))
     }
 }

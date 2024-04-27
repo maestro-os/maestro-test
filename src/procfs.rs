@@ -39,7 +39,7 @@ pub fn environ() -> TestResult {
                 .enumerate()
                 .find(|(_, b)| **b == b'=')
                 .map(|(i, _)| i)
-                .ok_or(TestError)?;
+                .ok_or_else(|| TestError("missing `=` in environment variable".to_owned()))?;
             let (name, value) = var.split_at(off);
             Ok((name, &value[1..]))
         })

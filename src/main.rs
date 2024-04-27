@@ -123,7 +123,7 @@ fn main() {
             let res = (test.start)();
             match res {
                 Ok(_) => println!("[OK]"),
-                Err(_) => println!("[KO]"),
+                Err(err) => println!("[KO] {}", err.0),
             }
         }
     }
