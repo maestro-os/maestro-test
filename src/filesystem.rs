@@ -1,6 +1,6 @@
 //! TODO doc
 
-use crate::util::TestResult;
+use crate::util::{TestError, TestResult};
 use crate::{test_assert, test_assert_eq, util};
 use std::ffi::OsString;
 use std::fs;
@@ -14,7 +14,7 @@ use std::os::fd::AsRawFd;
 use std::path::Path;
 use std::str::FromStr;
 
-pub fn basic0() -> TestResult {
+pub fn basic() -> TestResult {
     const PATH: &str = "test";
     // Test creating file
     let mut file = OpenOptions::new()
@@ -78,6 +78,51 @@ pub fn basic0() -> TestResult {
     let len = file.read(&mut buf)?;
     test_assert_eq!(len, 16);
     test_assert_eq!(&buf, b"hello abcdefghij");
+
+    Ok(())
+}
+
+pub fn directories() -> TestResult {
+    // Create directory at path that do not exist (invalid)
+    let res = fs::create_dir("/abc/def");
+    test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
+
+    // Create directories
+    fs::create_dir_all("/abc/def/ghi")?;
+    let stat = util::stat(OsString::from_str("/").unwrap().as_os_str())?;
+    test_assert_eq!(stat.st_nlink, 3);
+    let stat = util::stat(OsString::from_str("/abc").unwrap().as_os_str())?;
+    test_assert_eq!(stat.st_nlink, 3);
+    let stat = util::stat(OsString::from_str("/def").unwrap().as_os_str())?;
+    test_assert_eq!(stat.st_nlink, 3);
+    let stat = util::stat(OsString::from_str("/ghi").unwrap().as_os_str())?;
+    test_assert_eq!(stat.st_nlink, 2);
+
+    // TODO permissions
+
+    // Entries iteration
+    for i in 0..1000 {
+        fs::create_dir(format!("/abc/{i}"))?;
+    }
+    let mut entries = fs::read_dir("/abc")?
+        .map(|ent| {
+            let ent = ent?;
+            test_assert!(ent.file_type()?.is_dir());
+            let file_name = ent.file_name();
+            let file_name = file_name
+                .to_str()
+                .ok_or_else(|| TestError("invalid entry".to_owned()))?;
+            Ok(file_name.parse::<u32>()? as _)
+        })
+        .collect::<Result<Vec<u32>, TestError>>()?;
+    entries.sort_unstable();
+
+    // Remove non-empty directory (invalid)
+    let res = fs::remove_dir("/abc");
+    test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::DirectoryNotEmpty));
+
+    // Cleanup
+    fs::remove_dir_all("/abc")?;
 
     Ok(())
 }

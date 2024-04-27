@@ -4,11 +4,12 @@ use std::ffi::{c_int, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::process::{Command, Stdio};
 use std::{io, mem};
+use std::error::Error;
 
 pub struct TestError(pub String);
 
-impl From<io::Error> for TestError {
-    fn from(err: io::Error) -> Self {
+impl<E: Error> From<E> for TestError {
+    fn from(err: E) -> Self {
         TestError(err.to_string())
     }
 }

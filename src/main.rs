@@ -1,5 +1,7 @@
 //! `maestro-test` is a test suite for [Maestro](https://github.com/llenotre/maestro).
 
+#![feature(io_error_more)]
+
 use crate::util::{exec, TestResult};
 use std::process::Command;
 
@@ -31,17 +33,21 @@ const TESTS: &[TestSuite] = &[
         desc: "Files and filesystems handling",
         tests: &[
             Test {
-                name: "basic0",
+                name: "basic",
                 desc: "Create, remove and modify the properties of a single file",
-                start: filesystem::basic0,
+                start: filesystem::basic,
             },
             // TODO umask
+            Test {
+                name: "directories",
+                desc: "Create, remove and modify the properties directories",
+                start: filesystem::directories,
+            },
             Test {
                 name: "hardlinks",
                 desc: "Test hardlinks creation",
                 start: filesystem::hardlinks,
             },
-            // TODO directory (with permissions)
             // TODO symbolic links
             // TODO mount/umount (procfs and tmpfs. check /proc/mounts too)
             // TODO mount/umount another real filesystem
