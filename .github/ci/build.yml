@@ -1,0 +1,17 @@
+name: "Build integration tests image"
+on: [push]
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clippy
+        run: cargo clippy --all-features --tests
+      - name: Build
+        run: ./build.sh
+  format:
+    runs-on: [self-hosted, linux]
+    needs: build
+    steps:
+      - name: Check format
+        run: cargo fmt --check
