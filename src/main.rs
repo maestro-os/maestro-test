@@ -28,6 +28,7 @@ struct Test {
 
 /// The list of tests to perform.
 const TESTS: &[TestSuite] = &[
+    // TODO test partitions (both MBR and GPT)
     TestSuite {
         name: "filesystem",
         desc: "Files and filesystems handling",
@@ -49,6 +50,9 @@ const TESTS: &[TestSuite] = &[
                 start: filesystem::hardlinks,
             },
             // TODO symbolic links
+            // TODO test with a lot of files
+            // TODO test with big files
+            // TODO try to fill the filesystem
             // TODO mount/umount (procfs and tmpfs. check /proc/mounts too)
             // TODO mount/umount another real filesystem
             // TODO rename (including across different filesystems)
@@ -61,7 +65,7 @@ const TESTS: &[TestSuite] = &[
     // TODO ELF files (execve)
     // TODO user/group file accesses (including SUID/SGID)
     // TODO mmap/munmap (including shared libraries)
-    // TODO time ((non)-monotonic clock, sleep and timer_*)
+    // TODO time ((non-)monotonic clock, sleep and timer_*)
     // TODO termcaps
     // TODO SSE/MMX/AVX states consistency
     TestSuite {
