@@ -13,12 +13,8 @@ cargo build --release -Zbuild-std --target "$TARGET"
 dd if=/dev/zero of=disk bs=1M count=1024
 mkfs.ext2 disk
 
-# Mount
-mkdir -p mnt
-sudo mount disk mnt
-
 # Fill filesystem
-cp "target/$TARGET/release/maestro-test" mnt/
-
-# Cleanup
-sudo umount mnt
+debugfs -wf - disk <<EOF
+mkdir /sbin
+write target/$TARGET/release/maestro-test /sbin/init
+EOF
