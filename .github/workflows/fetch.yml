@@ -1,0 +1,23 @@
+name: "Fetch integration tests"
+on: [workflow_call]
+jobs:
+  fetch:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: maestro-test/
+      - id: fetch
+        uses: actions/cache@v4
+        with:
+          path: qemu_disk
+          key: integration-tests
+      - name: Build tests image
+        if: steps.fetch.outputs.cache-hit != 'true'
+        run: ./build.sh
+      - name:
+        if: steps.fetch.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: disk
+          key: integration-tests
