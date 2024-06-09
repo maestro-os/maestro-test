@@ -15,11 +15,3 @@ jobs:
     steps:
       - name: Check format
         run: cargo fmt --check
-  cache:
-    runs-on: [self-hosted, linux]
-    needs: build
-    steps:
-      - uses: actions/cache@v4
-        with:
-          path: disk
-          key: integration-tests
