@@ -6,6 +6,7 @@ use std::ffi::c_int;
 use std::ffi::c_ulong;
 use std::ffi::c_void;
 use std::ffi::CStr;
+use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -52,8 +53,8 @@ macro_rules! test_assert_eq {
 }
 
 pub fn chmod<P: AsRef<Path>>(path: P, mode: mode_t) -> io::Result<()> {
-    let path = path.as_ref().as_os_str().as_bytes().as_ptr() as _;
-    let res = unsafe { libc::chmod(path, mode) };
+    let path = CString::new(path.as_ref().as_os_str().as_bytes())?;
+    let res = unsafe { libc::chmod(path.as_ptr(), mode) };
     if res >= 0 {
         Ok(())
     } else {
@@ -71,10 +72,10 @@ pub fn fchmod(fd: c_int, mode: mode_t) -> io::Result<()> {
 }
 
 pub fn stat<P: AsRef<Path>>(path: P) -> io::Result<libc::stat> {
+    let path = CString::new(path.as_ref().as_os_str().as_bytes())?;
     unsafe {
         let mut stat: libc::stat = mem::zeroed();
-        let path = path.as_ref().as_os_str().as_bytes().as_ptr() as _;
-        let res = libc::stat(path, &mut stat);
+        let res = libc::stat(path.as_ptr(), &mut stat);
         if res >= 0 {
             Ok(stat)
         } else {
