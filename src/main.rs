@@ -71,8 +71,13 @@ const TESTS: &[TestSuite] = &[
     // TODO SSE/MMX/AVX states consistency
     TestSuite {
         name: "procfs",
-        desc: "",
+        desc: "Test correctness of the procfs filesystem",
         tests: &[
+            Test {
+                name: "mount",
+                desc: "Mount the procfs",
+                start: procfs::mount,
+            },
             Test {
                 name: "/proc/self/cwd",
                 desc: "/proc/self/cwd",

@@ -1,11 +1,29 @@
-//! TODO doc
+//! procfs filesystem testing.
 
 use crate::test_assert_eq;
+use crate::util;
 use crate::util::{TestError, TestResult};
 use std::collections::HashMap;
 use std::env::current_dir;
+use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
+use std::ptr::null;
 use std::{env, fs};
+
+pub fn mount() -> TestResult {
+    fs::create_dir_all("/proc")?;
+    let src = CString::new("procfs")?;
+    let target = CString::new("/proc")?;
+    let fstype = CString::new("tmpfs")?;
+    util::mount(
+        src.as_c_str(),
+        target.as_c_str(),
+        fstype.as_c_str(),
+        0,
+        null(),
+    )?;
+    Ok(())
+}
 
 pub fn cwd() -> TestResult {
     let cwd = fs::read_link("/proc/self/cwd")?;
@@ -39,7 +57,7 @@ pub fn environ() -> TestResult {
                 .enumerate()
                 .find(|(_, b)| **b == b'=')
                 .map(|(i, _)| i)
-                .ok_or_else(|| TestError("missing `=` in environment variable".to_owned()))?;
+                .ok_or_else(|| TestError("missing `=` for environment variable".to_owned()))?;
             let (name, value) = var.split_at(off);
             Ok((name, &value[1..]))
         })

@@ -3,6 +3,9 @@
 use libc::mode_t;
 use std::error::Error;
 use std::ffi::c_int;
+use std::ffi::c_ulong;
+use std::ffi::c_void;
+use std::ffi::CStr;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -89,6 +92,21 @@ pub fn fstat(fd: c_int) -> io::Result<libc::stat> {
         } else {
             Err(io::Error::last_os_error())
         }
+    }
+}
+
+pub fn mount(
+    src: &CStr,
+    target: &CStr,
+    fstype: &CStr,
+    flags: c_ulong,
+    data: *const c_void,
+) -> io::Result<()> {
+    let res = unsafe { libc::mount(src.as_ptr(), target.as_ptr(), fstype.as_ptr(), flags, data) };
+    if res >= 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
 
