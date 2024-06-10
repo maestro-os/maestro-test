@@ -3,6 +3,7 @@
 #![feature(io_error_more)]
 
 use crate::util::{exec, TestResult};
+use std::process::exit;
 use std::process::Command;
 
 mod filesystem;
@@ -124,6 +125,7 @@ fn main() {
     // Start marker
     println!();
     println!("[START]");
+    let mut failure = false;
     for suite in TESTS {
         println!("[SUITE] {}", suite.name);
         println!("[DESC] {}", suite.desc);
@@ -133,10 +135,16 @@ fn main() {
             let res = (test.start)();
             match res {
                 Ok(_) => println!("[OK]"),
-                Err(err) => println!("[KO] {}", err.0),
+                Err(err) => {
+                    failure = true;
+                    println!("[KO] {}", err.0);
+                }
             }
         }
     }
     // End marker
     println!("[END]");
+    if failure {
+        exit(1);
+    }
 }
