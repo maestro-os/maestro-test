@@ -14,7 +14,7 @@ pub fn mount() -> TestResult {
     fs::create_dir_all("/proc")?;
     let src = CString::new("procfs")?;
     let target = CString::new("/proc")?;
-    let fstype = CString::new("tmpfs")?;
+    let fstype = CString::new("procfs")?;
     util::mount(
         src.as_c_str(),
         target.as_c_str(),
@@ -33,7 +33,7 @@ pub fn cwd() -> TestResult {
 
 pub fn exe() -> TestResult {
     let exe = fs::read_link("/proc/self/exe")?;
-    test_assert_eq!(exe.as_os_str().as_bytes(), b"/test");
+    test_assert_eq!(exe.as_os_str().as_bytes(), b"/maestro-test");
     Ok(())
 }
 

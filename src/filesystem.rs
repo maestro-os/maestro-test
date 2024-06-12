@@ -156,13 +156,13 @@ pub fn hardlinks() -> TestResult {
     fs::remove_dir("/test_dir")?;
 
     // Link to file
-    fs::hard_link("/test", "/good_link")?;
-    let inode0 = util::stat("/test")?.st_ino;
+    fs::hard_link("/maestro-test", "/good_link")?;
+    let inode0 = util::stat("/maestro-test")?.st_ino;
     let inode1 = util::stat("/good_link")?.st_ino;
     test_assert_eq!(inode0, inode1);
     // Remove and check
     fs::remove_file("/good_link")?;
-    util::stat("/test")?;
+    util::stat("/maestro-test")?;
     let res = util::stat("/good_link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
 
