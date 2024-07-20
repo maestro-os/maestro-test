@@ -1,8 +1,8 @@
 //! procfs filesystem testing.
 
-use crate::test_assert_eq;
 use crate::util;
 use crate::util::{TestError, TestResult};
+use crate::{log, test_assert_eq};
 use std::collections::HashMap;
 use std::env::current_dir;
 use std::ffi::CString;
@@ -11,7 +11,9 @@ use std::ptr::null;
 use std::{env, fs};
 
 pub fn mount() -> TestResult {
+    log!("Create directory");
     fs::create_dir_all("/proc")?;
+    log!("Mount");
     let src = CString::new("procfs")?;
     let target = CString::new("/proc")?;
     let fstype = CString::new("procfs")?;

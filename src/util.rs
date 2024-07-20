@@ -52,6 +52,14 @@ macro_rules! test_assert_eq {
     }};
 }
 
+/// Prints a log.
+#[macro_export]
+macro_rules! log {
+	($($arg:tt)*) => {{
+		println!("[LOG] {}", format_args!($($arg)*));
+	}};
+}
+
 pub fn chmod<P: AsRef<Path>>(path: P, mode: mode_t) -> io::Result<()> {
     let path = CString::new(path.as_ref().as_os_str().as_bytes())?;
     let res = unsafe { libc::chmod(path.as_ptr(), mode) };
