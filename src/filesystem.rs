@@ -1,4 +1,4 @@
-//! TODO doc
+//! Filesystem testing.
 
 use crate::util::{TestError, TestResult};
 use crate::{log, test_assert, test_assert_eq, util};
@@ -10,6 +10,8 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Write;
 use std::os::fd::AsRawFd;
+use std::os::unix;
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 pub fn basic() -> TestResult {
@@ -147,29 +149,114 @@ pub fn directories() -> TestResult {
 
 pub fn hardlinks() -> TestResult {
     log!("Create link to directory (invalid)");
-    fs::create_dir("/test_dir")?;
-    let res = fs::hard_link("/test_dir", "/bad_link");
+    fs::create_dir("test_dir")?;
+    let res = fs::hard_link("test_dir", "bad_link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::PermissionDenied));
     // Check the link has not been created
-    let res = fs::remove_dir("/bad_link");
+    let res = fs::remove_dir("bad_link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
     log!("Cleanup");
-    fs::remove_dir("/test_dir")?;
+    fs::remove_dir("test_dir")?;
 
     log!("Create link to file");
-    fs::hard_link("/maestro-test", "/good_link")?;
-    let inode0 = util::stat("/maestro-test")?.st_ino;
-    let inode1 = util::stat("/good_link")?.st_ino;
+    fs::hard_link("maestro-test", "good_link")?;
+    let inode0 = util::stat("maestro-test")?.st_ino;
+    let inode1 = util::stat("good_link")?.st_ino;
     test_assert_eq!(inode0, inode1);
     log!("Remove link to file");
-    fs::remove_file("/good_link")?;
-    util::stat("/maestro-test")?;
-    let res = util::stat("/good_link");
+    fs::remove_file("good_link")?;
+    util::stat("maestro-test")?;
+    let res = util::stat("good_link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
 
     log!("Create link to file that don't exist (invalid)");
-    let res = fs::hard_link("/not_found", "/link");
+    let res = fs::hard_link("not_found", "link");
     test_assert!(matches!(res, Err(e) if e.kind() == io::ErrorKind::NotFound));
+
+    Ok(())
+}
+
+pub fn symlinks() -> TestResult {
+    log!("Create link");
+    unix::fs::symlink("maestro-test", "testlink")?;
+    log!("Cleanup");
+    fs::remove_file("testlink")?;
+
+    log!("Create directory");
+    fs::create_dir("target")?;
+    log!("Create link to directory");
+    unix::fs::symlink("link", "target")?;
+    log!("Stat link");
+    test_assert!(fs::metadata("link")?.is_symlink());
+    log!("Stat directory");
+    test_assert!(fs::metadata("link/")?.is_dir());
+
+    log!("Make dangling");
+    fs::remove_dir("target")?;
+    log!("Stat link");
+    test_assert!(fs::metadata("link")?.is_symlink());
+    log!("Stat directory");
+    test_assert!(matches!(fs::metadata("link/"), Err(e) if e.kind() == io::ErrorKind::NotFound));
+    log!("Cleanup");
+    fs::remove_file("link")?;
+
+    Ok(())
+}
+
+pub fn rename() -> TestResult {
+    log!("Create file");
+    {
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .read(true)
+            .write(true)
+            .open("old")?;
+        file.write_all(b"abcdef")?;
+    }
+
+    log!("Rename");
+    fs::rename("old", "new")?;
+    log!("Stat old file");
+    test_assert!(matches!(fs::metadata("old"), Err(e) if e.kind() == io::ErrorKind::NotFound));
+    log!("Stat new file");
+    let metadata = fs::metadata("new")?;
+    test_assert!(metadata.is_file());
+    test_assert_eq!(metadata.len(), 6);
+    test_assert_eq!(metadata.nlink(), 1);
+    log!("Read new file");
+    test_assert_eq!(fs::read("new")?, b"abcdef");
+    log!("Cleanup");
+    fs::remove_file("new")?;
+
+    log!("Create directories");
+    fs::create_dir_all("old/foo/bar")?;
+    log!("Rename");
+    fs::rename("old", "new")?;
+    log!("Stat old directory");
+    test_assert!(matches!(fs::metadata("old"), Err(e) if e.kind() == io::ErrorKind::NotFound));
+    log!("Stat new directories");
+    for (path, links) in [("new", 3), ("foo", 3), ("bar", 2)] {
+        let metadata = fs::metadata(path)?;
+        test_assert!(metadata.is_dir());
+        test_assert_eq!(metadata.nlink(), links);
+    }
+    log!("Cleanup");
+    fs::remove_dir_all("new")?;
+    test_assert!(matches!(fs::metadata("new"), Err(e) if e.kind() == io::ErrorKind::NotFound));
+
+    // TODO test moving across mountpoints
+
+    Ok(())
+}
+
+pub fn fifo() -> TestResult {
+    log!("Create fifo");
+    util::mkfifo("fifo", 0o666)?;
+    // TODO test read/write (need another thread/process)
+    log!("Cleanup");
+    fs::remove_file("fifo")?;
+
+    // TODO test on tmpfs
 
     Ok(())
 }

@@ -104,6 +104,16 @@ pub fn fstat(fd: c_int) -> io::Result<libc::stat> {
     }
 }
 
+pub fn mkfifo<P: AsRef<Path>>(path: P, mode: mode_t) -> io::Result<()> {
+    let path = CString::new(path.as_ref().as_os_str().as_bytes())?;
+    let res = unsafe { libc::mkfifo(path.as_ptr(), mode) };
+    if res >= 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
 pub fn mount(
     src: &CStr,
     target: &CStr,

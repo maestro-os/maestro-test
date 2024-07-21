@@ -2,9 +2,8 @@
 
 #![feature(io_error_more)]
 
-use crate::util::{exec, TestResult};
+use crate::util::TestResult;
 use std::process::exit;
-use std::process::Command;
 
 mod filesystem;
 mod procfs;
@@ -47,17 +46,30 @@ const TESTS: &[TestSuite] = &[
             },
             Test {
                 name: "hardlinks",
-                desc: "Test hardlinks creation",
+                desc: "Test hard links",
                 start: filesystem::hardlinks,
             },
-            // TODO symbolic links
+            Test {
+                name: "symlinks",
+                desc: "Test symbolic links",
+                start: filesystem::symlinks,
+            },
             // TODO test with a lot of files
             // TODO test with big files
             // TODO try to fill the filesystem
             // TODO mount/umount (procfs and tmpfs. check /proc/mounts too)
             // TODO mount/umount another real filesystem
-            // TODO rename (including across different filesystems)
-            // TODO file fifo/socket (including in tmpfs)
+            Test {
+                name: "rename",
+                desc: "Test renaming files",
+                start: filesystem::rename,
+            },
+            Test {
+                name: "fifo",
+                desc: "Test FIFO files",
+                start: filesystem::fifo,
+            },
+            // TODO file socket (including in tmpfs)
             // TODO check /dev/* contents
         ],
     },
@@ -101,7 +113,8 @@ const TESTS: &[TestSuite] = &[
             // TODO /proc/self/stat
         ],
     },
-    TestSuite {
+    // TODO install required commands
+    /*TestSuite {
         name: "command",
         desc: "Basic commands testing",
         tests: &[
@@ -120,7 +133,7 @@ const TESTS: &[TestSuite] = &[
             // TODO `cp`
             // TODO `rm`
         ],
-    },
+    },*/
     // TODO scripts (Shell/Perl)
     // TODO compilation (C/C++/Rust)
     // TODO network
