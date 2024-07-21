@@ -185,7 +185,7 @@ pub fn symlinks() -> TestResult {
     log!("Create directory");
     fs::create_dir("target")?;
     log!("Create link to directory");
-    unix::fs::symlink("link", "target")?;
+    unix::fs::symlink("target", "link")?;
     log!("Stat link");
     test_assert!(fs::metadata("link")?.is_symlink());
     log!("Stat directory");
