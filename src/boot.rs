@@ -11,6 +11,5 @@ pub fn main() {
     unsafe {
         libc::syscall(libc::SYS_reboot, 0xde145e83u32, 0x40367d6eu32, cmd, 0);
     }
-    // Loop in case shutdown failed for some reason
-    loop {}
+    panic!("Shutdown failed!");
 }

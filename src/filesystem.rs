@@ -14,12 +14,12 @@ use std::path::Path;
 
 pub fn basic() -> TestResult {
     log!("File creation");
-    const PATH: &Path = Path::new("test");
+    let path = Path::new("test");
     let mut file = OpenOptions::new()
         .create_new(true)
         .read(true)
         .write(true)
-        .open(PATH)?;
+        .open(path)?;
 
     log!("File write");
     let len = file.write(b"hello world!")?;
@@ -58,10 +58,10 @@ pub fn basic() -> TestResult {
     // TODO change access/modification times
 
     log!("File remove");
-    test_assert!(PATH.exists());
-    fs::remove_file(PATH)?;
-    test_assert!(!PATH.exists());
-    test_assert!(matches!(fs::remove_file(PATH), Err(e) if e.kind() == io::ErrorKind::NotFound));
+    test_assert!(path.exists());
+    fs::remove_file(path)?;
+    test_assert!(!path.exists());
+    test_assert!(matches!(fs::remove_file(path), Err(e) if e.kind() == io::ErrorKind::NotFound));
 
     log!("File remove defer");
     let off = file.seek(SeekFrom::End(0))?;
